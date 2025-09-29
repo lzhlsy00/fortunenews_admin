@@ -3,12 +3,13 @@ import { handleRouteError } from '@/lib/api/error';
 import { errorResponse, successResponse } from '@/lib/api/response';
 import { serializeNews } from '@/lib/api/serializers';
 import { Prisma } from '@prisma/client';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 const idSchema = z.coerce.number().int().min(1, '新闻ID必须是正整数');
@@ -50,9 +51,14 @@ const buildUpdateData = (input: UpdateInput): Prisma.NewsUpdateInput => {
   return data;
 };
 
-export const GET = async (_request: Request, context: RouteContext) => {
+const parseId = async (context: RouteContext) => {
+  const { id } = await context.params;
+  return idSchema.parse(id);
+};
+
+export const GET = async (_request: NextRequest, context: RouteContext) => {
   try {
-    const id = idSchema.parse(context.params.id);
+    const id = await parseId(context);
 
     const news = await prisma.news.findUnique({
       where: { id },
@@ -68,9 +74,9 @@ export const GET = async (_request: Request, context: RouteContext) => {
   }
 };
 
-export const PUT = async (request: Request, context: RouteContext) => {
+export const PUT = async (request: NextRequest, context: RouteContext) => {
   try {
-    const id = idSchema.parse(context.params.id);
+    const id = await parseId(context);
     const payload = await request.json();
     const input = updateSchema.parse(payload);
 
@@ -90,9 +96,9 @@ export const PUT = async (request: Request, context: RouteContext) => {
   }
 };
 
-export const DELETE = async (_request: Request, context: RouteContext) => {
+export const DELETE = async (_request: NextRequest, context: RouteContext) => {
   try {
-    const id = idSchema.parse(context.params.id);
+    const id = await parseId(context);
 
     const existing = await prisma.news.findUnique({ where: { id } });
     if (!existing) {

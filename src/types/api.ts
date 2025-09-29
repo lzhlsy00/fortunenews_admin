@@ -63,7 +63,7 @@ export interface StatsResponse extends BaseResponse {
 }
 
 // 请求参数类型
-export interface NewsListParams {
+export interface NewsListParams extends Record<string, string | number | boolean | null | undefined> {
   page?: number;
   limit?: number;
   category?: string;

@@ -3,19 +3,25 @@ import { handleRouteError } from '@/lib/api/error';
 import { errorResponse, successResponse } from '@/lib/api/response';
 import { serializeNews } from '@/lib/api/serializers';
 import { applyCorsHeaders, createCorsPreflightResponse } from '@/lib/api/cors';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 const idSchema = z.coerce.number().int().min(1, '新闻ID必须是正整数');
 
-export const GET = async (request: Request, context: RouteContext) => {
+const parseId = async (context: RouteContext) => {
+  const { id } = await context.params;
+  return idSchema.parse(id);
+};
+
+export const GET = async (request: NextRequest, context: RouteContext) => {
   try {
-    const id = idSchema.parse(context.params.id);
+    const id = await parseId(context);
 
     const news = await prisma.news.findFirst({
       where: {
@@ -38,4 +44,4 @@ export const GET = async (request: Request, context: RouteContext) => {
   }
 };
 
-export const OPTIONS = async (request: Request) => createCorsPreflightResponse(request);
+export const OPTIONS = async (request: NextRequest) => createCorsPreflightResponse(request);

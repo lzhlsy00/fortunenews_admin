@@ -30,3 +30,4 @@ pnpm-debug.log*
 # IDEs and misc
 .DS_Store
 *.swp
+.vercel
