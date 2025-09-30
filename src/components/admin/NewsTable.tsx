@@ -10,6 +10,8 @@ interface NewsTableProps {
 
 export default function NewsTable({ onEditNews }: NewsTableProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null)
+  const [aiFilter, setAiFilter] = useState<'ALL' | 'TRUE' | 'FALSE'>('ALL')
   
   const { 
     newsList, 
@@ -25,7 +27,7 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
     limit: 10 
   })
   
-  const { deleteNews } = useNewsApi()
+  const { deleteNews, updateNews } = useNewsApi()
 
   // 格式化时间
   const formatTime = (isoDate: string) => {
@@ -88,7 +90,7 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
   // Handle delete
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this news item?')) return
-    
+
     setDeletingId(id)
     try {
       await deleteNews(id)
@@ -100,9 +102,36 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
     }
   }
 
+  // Handle status toggle
+  const handleToggleStatus = async (news: NewsItem) => {
+    const nextStatus = news.status === 'PUBLISH' ? 'DRAFT' : 'PUBLISH'
+
+    setStatusUpdatingId(news.id)
+    try {
+      await updateNews(news.id, { status: nextStatus })
+      refreshNews()
+    } catch (err) {
+      console.error('Status update failed:', err)
+    } finally {
+      setStatusUpdatingId(null)
+    }
+  }
+
   // Handle pagination
   const handlePageChange = (page: number) => {
     updateParams({ page })
+  }
+
+  // Handle AI worth filter change
+  const handleFilterChange = (value: 'ALL' | 'TRUE' | 'FALSE') => {
+    setAiFilter(value)
+
+    if (value === 'ALL') {
+      updateParams({ page: 1, aiWorth: undefined })
+      return
+    }
+
+    updateParams({ page: 1, aiWorth: value === 'TRUE' })
   }
 
   if (error) {
@@ -121,6 +150,31 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
 
   return (
     <>
+      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <span className="text-sm font-medium text-gray-700">AI筛选</span>
+          <div className="inline-flex rounded-md border border-gray-200 bg-white shadow-sm">
+            {[
+              { label: 'ALL', value: 'ALL' as const },
+              { label: 'AI-True', value: 'TRUE' as const },
+              { label: 'AI-False', value: 'FALSE' as const }
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => handleFilterChange(option.value)}
+                className={`px-3 py-1 text-sm transition-colors duration-200 first:rounded-l-md last:rounded-r-md ${
+                  aiFilter === option.value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={loading || statusUpdatingId !== null || deletingId !== null}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
       <div className="overflow-x-auto">
         {loading && (
           <div className="text-center py-8">
@@ -183,17 +237,28 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
                       {formatTime(news.isoDate)}
                     </td>
                     <td className="px-6 py-4 text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => handleToggleStatus(news)}
+                        className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={statusUpdatingId === news.id || deletingId === news.id}
+                      >
+                        {statusUpdatingId === news.id
+                          ? 'Updating...'
+                          : news.status === 'PUBLISH'
+                            ? 'Draft'
+                            : 'Publish'}
+                      </button>
                       <button 
                         onClick={() => handleEdit(news)}
                         className="text-blue-600 hover:text-blue-900 transition-colors duration-200"
-                        disabled={deletingId === news.id}
+                        disabled={deletingId === news.id || statusUpdatingId === news.id}
                       >
                         Edit
                       </button>
                       <button 
                         onClick={() => handleDelete(news.id)}
                         className="text-red-600 hover:text-red-900 transition-colors duration-200"
-                        disabled={deletingId === news.id}
+                        disabled={deletingId === news.id || statusUpdatingId === news.id}
                       >
                         {deletingId === news.id ? 'Deleting...' : 'Delete'}
                       </button>
