@@ -53,7 +53,7 @@ export const GET = async (request: NextRequest) => {
         where,
         skip,
         take: query.limit,
-        orderBy: { isoDate: 'desc' },
+        orderBy: [{ isoDate: 'desc' }, { id: 'desc' }],
       }),
     ]);
 

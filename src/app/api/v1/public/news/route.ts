@@ -52,9 +52,9 @@ export const GET = async (request: NextRequest) => {
 
     const query = parsed.data;
     const skip = (query.page - 1) * query.limit;
-    const orderBy: Prisma.NewsOrderByWithRelationInput = query.latest
-      ? { isoDate: 'desc' }
-      : { id: 'desc' };
+    const orderBy: Prisma.NewsOrderByWithRelationInput[] = query.latest
+      ? [{ isoDate: 'desc' }, { id: 'desc' }]
+      : [{ id: 'desc' }];
 
     const where = buildWhere(query);
 

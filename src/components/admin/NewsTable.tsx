@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NewsItem } from '@/types/api'
 import { useNewsList, useNewsApi } from '@/hooks/useNewsApi'
 
@@ -12,6 +12,7 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null)
   const [aiFilter, setAiFilter] = useState<'ALL' | 'TRUE' | 'FALSE'>('ALL')
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null)
   
   const { 
     newsList, 
@@ -102,7 +103,6 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
     }
   }
 
-  // Handle status toggle
   const handleToggleStatus = async (news: NewsItem) => {
     const nextStatus = news.status === 'PUBLISH' ? 'DRAFT' : 'PUBLISH'
 
@@ -116,6 +116,33 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
       setStatusUpdatingId(null)
     }
   }
+
+  const closeMenu = () => setOpenMenuId(null)
+
+  useEffect(() => {
+    if (openMenuId === null) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (target.closest('[data-action-menu]') || target.closest('[data-action-toggle]')) {
+        return
+      }
+      closeMenu()
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeMenu()
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [openMenuId])
 
   // Handle pagination
   const handlePageChange = (page: number) => {
@@ -166,12 +193,12 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
                   aiFilter === option.value
                     ? 'bg-blue-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-100'
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={loading || statusUpdatingId !== null || deletingId !== null}
-              >
-                {option.label}
-              </button>
-            ))}
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={loading || deletingId !== null || statusUpdatingId !== null}
+            >
+              {option.label}
+            </button>
+          ))}
           </div>
         </div>
       </div>
@@ -236,32 +263,72 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {formatTime(news.isoDate)}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium space-x-2">
-                      <button
-                        onClick={() => handleToggleStatus(news)}
-                        className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={statusUpdatingId === news.id || deletingId === news.id}
-                      >
-                        {statusUpdatingId === news.id
-                          ? 'Updating...'
-                          : news.status === 'PUBLISH'
-                            ? 'Draft'
-                            : 'Publish'}
-                      </button>
-                      <button 
-                        onClick={() => handleEdit(news)}
-                        className="text-blue-600 hover:text-blue-900 transition-colors duration-200"
-                        disabled={deletingId === news.id || statusUpdatingId === news.id}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(news.id)}
-                        className="text-red-600 hover:text-red-900 transition-colors duration-200"
-                        disabled={deletingId === news.id || statusUpdatingId === news.id}
-                      >
-                        {deletingId === news.id ? 'Deleting...' : 'Delete'}
-                      </button>
+                    <td className="px-6 py-4 text-sm font-medium">
+                      <div className="relative inline-flex">
+                        <button
+                          type="button"
+                          onClick={() => setOpenMenuId(openMenuId === news.id ? null : news.id)}
+                          className="flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={deletingId === news.id || statusUpdatingId === news.id}
+                          aria-haspopup="menu"
+                          aria-expanded={openMenuId === news.id}
+                          data-action-toggle="true"
+                        >
+                          <span className="sr-only">Open action menu</span>
+                          <span aria-hidden="true" className="flex flex-col items-center justify-between h-4">
+                            <span className="w-1 h-1 bg-current rounded-full"></span>
+                            <span className="w-1 h-1 bg-current rounded-full"></span>
+                            <span className="w-1 h-1 bg-current rounded-full"></span>
+                          </span>
+                        </button>
+                        {openMenuId === news.id && (
+                          <div
+                            role="menu"
+                            className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-10"
+                            data-action-menu="true"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                closeMenu()
+                                void handleToggleStatus(news)
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                              role="menuitem"
+                              disabled={statusUpdatingId === news.id}
+                            >
+                              {statusUpdatingId === news.id
+                                ? 'Updating...'
+                                : news.status === 'PUBLISH'
+                                  ? 'Set Draft'
+                                  : 'Publish'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                closeMenu()
+                                handleEdit(news)
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                              role="menuitem"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                closeMenu()
+                                void handleDelete(news.id)
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                              role="menuitem"
+                              disabled={deletingId === news.id || statusUpdatingId === news.id}
+                            >
+                              {deletingId === news.id ? 'Deleting...' : 'Delete'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

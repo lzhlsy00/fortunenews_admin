@@ -14,6 +14,11 @@ type RouteContext = {
 
 const idSchema = z.coerce.number().int().min(1, '新闻ID必须是正整数');
 
+const statusSchema = z
+  .string()
+  .transform((value) => value.trim().toUpperCase())
+  .pipe(z.enum(['DRAFT', 'PUBLISH']))
+
 const updateSchema = z
   .object({
     title: z.string().min(1).max(1000).optional(),
@@ -28,7 +33,7 @@ const updateSchema = z
     aiWorth: z.boolean().nullish(),
     aiReason: z.string().max(2000, 'AI评估原因长度不能超过2000字符').nullish(),
     category: z.string().max(100, '新闻分类长度不能超过100字符').nullish(),
-    status: z.enum(['DRAFT', 'PUBLISH']).optional(),
+    status: statusSchema.optional(),
   })
   .refine((data) => Object.values(data).some((value) => value !== undefined), {
     message: '至少需要提供一个字段进行更新',

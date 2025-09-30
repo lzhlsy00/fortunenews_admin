@@ -47,9 +47,18 @@ const buildFilters = (query: AdminNewsQuery): Prisma.NewsWhereInput => {
   return where;
 };
 
-const buildOrderBy = (query: AdminNewsQuery): Prisma.NewsOrderByWithRelationInput => ({
-  [query.sortBy]: query.sortOrder,
-});
+const buildOrderBy = (query: AdminNewsQuery): Prisma.NewsOrderByWithRelationInput[] => {
+  if (query.sortBy === 'isoDate') {
+    return [
+      { isoDate: query.sortOrder },
+      { id: query.sortOrder },
+    ];
+  }
+
+  return [
+    { [query.sortBy]: query.sortOrder } as Prisma.NewsOrderByWithRelationInput,
+  ];
+};
 
 export const GET = async (request: NextRequest) => {
   try {
