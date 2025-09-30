@@ -22,6 +22,10 @@ export interface NewsItem {
   aiReason: string | null;
   category: string | null;
   status: 'DRAFT' | 'PUBLISH';
+  translationKo: string | null;
+  translationEn: string | null;
+  titleKo: string | null;
+  titleEn: string | null;
 }
 
 // 分页信息
@@ -83,6 +87,10 @@ export interface NewsUpdateData {
   aiReason?: string;
   category?: string;
   status?: 'DRAFT' | 'PUBLISH';
+  translationKo?: string | null;
+  translationEn?: string | null;
+  titleKo?: string | null;
+  titleEn?: string | null;
 }
 
 export interface NewsUploadData {
@@ -94,4 +102,8 @@ export interface NewsUploadData {
   aiReason?: string;
   category?: string;
   status?: 'DRAFT' | 'PUBLISH';
+  translationKo?: string | null;
+  translationEn?: string | null;
+  titleKo?: string | null;
+  titleEn?: string | null;
 }
