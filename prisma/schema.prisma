@@ -15,6 +15,8 @@ model News {
   content   String?  @map("content")
   aiWorth   Boolean? @map("ai_worth")
   aiReason  String?  @map("ai_reason")
+  translationKo String? @map("translation-ko")
+  translationEn String? @map("translation-en")
   category  String?  @db.VarChar(100)
   status    String   @default("DRAFT") @db.VarChar(50)
 

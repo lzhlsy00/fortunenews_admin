@@ -58,6 +58,17 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
     }
   }
 
+  const getStatusButtonStyle = (status: 'DRAFT' | 'PUBLISH') => {
+    switch (status) {
+      case 'PUBLISH':
+        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+      case 'DRAFT':
+        return 'bg-green-100 text-green-800 hover:bg-green-200'
+      default:
+        return 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+    }
+  }
+
   // Get status text
   const getStatusText = (status: 'DRAFT' | 'PUBLISH') => {
     switch (status) {
@@ -264,70 +275,68 @@ export default function NewsTable({ onEditNews }: NewsTableProps) {
                       {formatTime(news.isoDate)}
                     </td>
                     <td className="px-6 py-4 text-sm font-medium">
-                      <div className="relative inline-flex">
+                      <div className="flex items-center space-x-2">
                         <button
                           type="button"
-                          onClick={() => setOpenMenuId(openMenuId === news.id ? null : news.id)}
-                          className="flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={deletingId === news.id || statusUpdatingId === news.id}
-                          aria-haspopup="menu"
-                          aria-expanded={openMenuId === news.id}
-                          data-action-toggle="true"
+                          onClick={() => void handleToggleStatus(news)}
+                          className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed ${getStatusButtonStyle(news.status)}`}
+                          disabled={statusUpdatingId === news.id || deletingId === news.id}
                         >
-                          <span className="sr-only">Open action menu</span>
-                          <span aria-hidden="true" className="flex flex-col items-center justify-between h-4">
-                            <span className="w-1 h-1 bg-current rounded-full"></span>
-                            <span className="w-1 h-1 bg-current rounded-full"></span>
-                            <span className="w-1 h-1 bg-current rounded-full"></span>
-                          </span>
+                          {statusUpdatingId === news.id
+                            ? 'Updating...'
+                            : news.status === 'PUBLISH'
+                              ? 'Draft'
+                              : 'Publish'}
                         </button>
-                        {openMenuId === news.id && (
-                          <div
-                            role="menu"
-                            className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-10"
-                            data-action-menu="true"
+                        <div className="relative inline-flex">
+                          <button
+                            type="button"
+                            onClick={() => setOpenMenuId(openMenuId === news.id ? null : news.id)}
+                            className="flex items-center justify-center w-8 h-8 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={deletingId === news.id || statusUpdatingId === news.id}
+                            aria-haspopup="menu"
+                            aria-expanded={openMenuId === news.id}
+                            data-action-toggle="true"
                           >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                closeMenu()
-                                void handleToggleStatus(news)
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                              role="menuitem"
-                              disabled={statusUpdatingId === news.id}
+                            <span className="sr-only">Open action menu</span>
+                            <span aria-hidden="true" className="flex flex-col items-center justify-between h-4">
+                              <span className="w-1 h-1 bg-current rounded-full"></span>
+                              <span className="w-1 h-1 bg-current rounded-full"></span>
+                              <span className="w-1 h-1 bg-current rounded-full"></span>
+                            </span>
+                          </button>
+                          {openMenuId === news.id && (
+                            <div
+                              role="menu"
+                              className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-10"
+                              data-action-menu="true"
                             >
-                              {statusUpdatingId === news.id
-                                ? 'Updating...'
-                                : news.status === 'PUBLISH'
-                                  ? 'Set Draft'
-                                  : 'Publish'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                closeMenu()
-                                handleEdit(news)
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                              role="menuitem"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                closeMenu()
-                                void handleDelete(news.id)
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                              role="menuitem"
-                              disabled={deletingId === news.id || statusUpdatingId === news.id}
-                            >
-                              {deletingId === news.id ? 'Deleting...' : 'Delete'}
-                            </button>
-                          </div>
-                        )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  closeMenu()
+                                  handleEdit(news)
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                role="menuitem"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  closeMenu()
+                                  void handleDelete(news.id)
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                role="menuitem"
+                                disabled={deletingId === news.id || statusUpdatingId === news.id}
+                              >
+                                {deletingId === news.id ? 'Deleting...' : 'Delete'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
