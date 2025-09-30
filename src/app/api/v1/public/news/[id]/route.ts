@@ -34,9 +34,8 @@ export const GET = async (request: NextRequest, context: RouteContext) => {
       return errorResponse('新闻不存在或未发布', { status: 404 });
     }
 
-    const { aiReason: _aiReason, status: _status, ...rest } = serializeNews(news);
+    const { aiReason: _aiReason, ...rest } = serializeNews(news);
     void _aiReason;
-    void _status;
 
     return applyCorsHeaders(successResponse(rest), request);
   } catch (error) {

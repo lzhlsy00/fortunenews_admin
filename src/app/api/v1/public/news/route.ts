@@ -68,9 +68,8 @@ export const GET = async (request: NextRequest) => {
       }),
     ]);
 
-    const serialized = serializeNewsList(news).map(({ aiReason: _aiReason, status: _status, ...rest }) => {
+    const serialized = serializeNewsList(news).map(({ aiReason: _aiReason, ...rest }) => {
       void _aiReason;
-      void _status;
       return { ...rest };
     });
 
