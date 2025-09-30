@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma';
 import { handleRouteError } from '@/lib/api/error';
 import { errorResponse, successResponse } from '@/lib/api/response';
 import { serializeNews } from '@/lib/api/serializers';
-import { Prisma } from '@prisma/client';
+import { Prisma, type News } from '@prisma/client';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -10,6 +10,32 @@ type RouteContext = {
   params: Promise<{
     id: string;
   }>;
+};
+
+const WEBHOOK_URL = 'https://automation.hifortune.pro/webhook/f0792549-6062-45b6-83e3-df4ecbeaf4b7';
+
+const notifyPublishWebhook = async (news: News) => {
+  try {
+    const response = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: news.id,
+        title: news.title,
+        content: news.content,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(
+        `发布状态 webhook 调用失败: ${response.status} ${response.statusText}`,
+      );
+    }
+  } catch (error) {
+    console.error('发布状态 webhook 调用异常:', error);
+  }
 };
 
 const idSchema = z.coerce.number().int().min(1, '新闻ID必须是正整数');
@@ -94,6 +120,10 @@ export const PUT = async (request: NextRequest, context: RouteContext) => {
       where: { id },
       data: buildUpdateData(input),
     });
+
+    if (existing.status !== 'PUBLISH' && updated.status === 'PUBLISH') {
+      await notifyPublishWebhook(updated);
+    }
 
     return successResponse(serializeNews(updated), { message: '新闻更新成功' });
   } catch (error) {
